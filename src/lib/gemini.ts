@@ -1,9 +1,6 @@
-// gemini.ts
-import { config } from './config';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from './firebase';
 import { getCached, setCache, hashInput } from './cache';
-
-const GEMINI_API_KEY = config.gemini.apiKey;
-const GEMINI_API_URL = `${config.gemini.apiUrl}/${config.gemini.model}:generateContent`;
 
 interface TranscriptionData {
   text: string;
@@ -15,15 +12,7 @@ interface GeminiResponse {
   summary?: string;
 }
 
-interface GeminiAPIResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string;
-      }>;
-    };
-  }>;
-}
+
 
 /**
  * Extract keywords from transcription
@@ -107,68 +96,28 @@ Text: "${text.trim()}"`;
 }
 
 /**
- * Makes the actual API call to Gemini with exponential backoff
+ * Calls the Gemini Cloud Function
  */
 async function callGeminiAPI(prompt: string, maxTokens: number = 1024): Promise<string> {
-  const maxRetries = 3;
-  let lastError: Error | null = null;
+  try {
+    const analyzeFn = httpsCallable<{ prompt: string; maxOutputTokens: number }, { text: string }>(
+      functions,
+      'analyzeWithGemini'
+    );
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.3,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: maxTokens,
-          },
-        }),
-      });
+    const result = await analyzeFn({
+      prompt,
+      maxOutputTokens: maxTokens
+    });
 
-      if (response.status === 429) {
-        // Rate limited - wait and retry
-        const delay = Math.pow(2, attempt) * 1000;
-        console.warn(`Rate limited, retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
-      }
-
-      const data: GeminiAPIResponse = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-      if (!rawText) {
-        throw new Error('Invalid response format from Gemini API');
-      }
-
-      return rawText;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Unknown error');
-      console.error(`Gemini API attempt ${attempt + 1} failed:`, lastError.message);
-
-      if (attempt < maxRetries - 1) {
-        const delay = Math.pow(2, attempt) * 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+    return result.data.text;
+  } catch (error) {
+    console.error('Cloud Function call failed:', error);
+    if (error instanceof Error) {
+      throw new Error(`Failed to analyze text: ${error.message}`);
     }
+    throw new Error('Failed to analyze text via Cloud Function');
   }
-
-  throw new Error(`Failed to process with Gemini after ${maxRetries} attempts: ${lastError?.message}`);
 }
 
 /**

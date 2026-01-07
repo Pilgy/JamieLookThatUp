@@ -1,10 +1,12 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, set, onValue, off, get } from 'firebase/database';
+import { getFunctions } from 'firebase/functions';
 import { config } from './config';
 
 // Initialize Firebase
 const app = initializeApp(config.firebase);
 const database = getDatabase(app);
+export const functions = getFunctions(app);
 
 // Generate a random 4-digit session code
 export const generateSessionCode = (): string => {
