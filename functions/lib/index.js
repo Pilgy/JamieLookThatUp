@@ -10,17 +10,24 @@ const logger = require("firebase-functions/logger");
 // and access it via process.env.GEMINI_API_KEY or define it in code if using functions:config
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new generative_ai_1.GoogleGenerativeAI(GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 exports.analyzeWithGemini = (0, https_1.onCall)({ cors: true, secrets: ["GEMINI_API_KEY"] }, async (request) => {
     if (!GEMINI_API_KEY) {
         logger.error("GEMINI_API_KEY is not set");
         throw new https_1.HttpsError("internal", "API key not configured");
     }
-    const { prompt } = request.data;
+    const { prompt, systemInstruction } = request.data;
     if (!prompt || typeof prompt !== "string") {
         throw new https_1.HttpsError("invalid-argument", "The function must be called with a 'prompt' argument.");
     }
     try {
+        // Create model configuration
+        const modelConfig = { model: "gemini-2.0-flash-lite" };
+        // Add system instruction if provided
+        if (systemInstruction && typeof systemInstruction === "string") {
+            modelConfig.systemInstruction = systemInstruction;
+        }
+        // Initialize model with configuration
+        const model = genAI.getGenerativeModel(modelConfig);
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
