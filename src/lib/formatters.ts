@@ -21,15 +21,15 @@ export function formatAnalysisWithLinks(text: string): string {
       return `<a href="${cleanUrl}" 
         target="_blank" 
         rel="noopener noreferrer"
-        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+        class="text-primary-500 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline underline-offset-2 transition-colors"
       >${cleanUrl}</a>`;
     });
 
     // Helper function to create section HTML
     const createSection = (title: string, content: string) => `
-      <div class="mb-3">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1">${title}</h3>
-        <div class="text-gray-700 dark:text-gray-300">${content.trim()}</div>
+      <div class="mb-5">
+        <h3 class="text-base font-semibold uppercase tracking-wider text-surface-900 dark:text-surface-100 mb-2 border-b border-surface-200 dark:border-surface-700 pb-1 inline-block">${title}</h3>
+        <div class="text-base leading-relaxed text-surface-700 dark:text-surface-300">${content.trim()}</div>
       </div>
     `;
 
@@ -59,7 +59,7 @@ export function extractUrls(text: string): string[] {
 
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const matches = text.match(urlRegex) || [];
-  
+
   return matches
     .map((url) => url.replace(/[.,;]$/, '')) // Remove trailing punctuation
     .filter((url, index, self) => self.indexOf(url) === index); // Remove duplicates
@@ -81,11 +81,11 @@ export function extractKeywords(text: string): string[] {
   // Process keywords based on format (bullet points or comma-separated)
   const keywords = keywordsText.includes('- ')
     ? keywordsText
-        .split('\n')
-        .map((line) => line.replace(/^-\s*/, '').trim())
+      .split('\n')
+      .map((line) => line.replace(/^-\s*/, '').trim())
     : keywordsText
-        .split(',')
-        .map((keyword) => keyword.trim());
+      .split(',')
+      .map((keyword) => keyword.trim());
 
   // Filter out empty keywords and remove duplicates
   return [...new Set(keywords.filter((keyword) => keyword.length > 0))];

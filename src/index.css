@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --scrollbar-thumb: #FFA500;
+    --scrollbar-thumb: #4338ca;
   }
 
   /* Base scrollbar styles */
@@ -35,6 +35,38 @@
     border-radius: 10px;
     border: 2px solid transparent;
     background-clip: content-box;
+  }
+}
+
+@layer components {
+
+  /* Reusable card pattern */
+  .card {
+    @apply bg-surface-0 border border-surface-200 rounded-lg shadow-sm transition-all duration-200;
+  }
+
+  .card-dark {
+    @apply bg-surface-900 border border-surface-800 rounded-lg shadow-none;
+  }
+
+  /* Keyword pills - Minimalist style */
+  .keyword-link {
+    @apply text-primary-500 underline underline-offset-2 hover:text-primary-600 transition-colors font-medium;
+  }
+
+  /* Pastel keyword pills - Light Premium style */
+  .keyword-pill {
+    @apply px-3 py-1 rounded-full text-sm bg-surface-100 text-surface-800 hover:bg-surface-200 transition-colors border border-surface-200;
+  }
+
+  /* Section headers */
+  .section-title {
+    @apply text-heading font-display text-surface-900 dark:text-surface-0 tracking-tight;
+  }
+
+  /* Primary Button */
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium shadow-sm active:scale-95;
   }
 }
 

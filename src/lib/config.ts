@@ -1,11 +1,3 @@
-export const requiredEnvVars = [
-  'VITE_FIREBASE_API_KEY',
-  'VITE_FIREBASE_AUTH_DOMAIN',
-  'VITE_FIREBASE_DATABASE_URL',
-  'VITE_FIREBASE_PROJECT_ID',
-  'VITE_GEMINI_API_KEY',
-] as const;
-
 function getEnvVar(key: string): string {
   const value = import.meta.env[key];
   if (!value) {

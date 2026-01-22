@@ -67,12 +67,12 @@ export const MobileCarousel: React.FC<MobileCarouselProps> = ({ panels, darkMode
               setCurrentIndex(index);
             }}
             className={`w-2 h-2 rounded-full transition-colors ${index === currentIndex
-                ? darkMode
-                  ? 'bg-white'
-                  : 'bg-gray-800'
-                : darkMode
-                  ? 'bg-gray-600'
-                  : 'bg-gray-300'
+              ? darkMode
+                ? 'bg-white'
+                : 'bg-surface-900'
+              : darkMode
+                ? 'bg-surface-600'
+                : 'bg-surface-300'
               }`}
           />
         ))}
@@ -82,26 +82,26 @@ export const MobileCarousel: React.FC<MobileCarouselProps> = ({ panels, darkMode
       <button
         onClick={() => paginate(-1)}
         className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full ${darkMode
-            ? 'bg-gray-800 text-gray-200'
-            : 'bg-white text-gray-800'
-          } shadow-lg`}
+          ? 'bg-surface-800 text-surface-200 border border-surface-700'
+          : 'bg-white text-surface-800 border border-surface-200'
+          } shadow-sm`}
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
       <button
         onClick={() => paginate(1)}
         className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full ${darkMode
-            ? 'bg-gray-800 text-gray-200'
-            : 'bg-white text-gray-800'
-          } shadow-lg`}
+          ? 'bg-surface-800 text-surface-200 border border-surface-700'
+          : 'bg-white text-surface-800 border border-surface-200'
+          } shadow-sm`}
       >
         <ChevronRight className="w-6 h-6" />
       </button>
 
       {/* Panel Title */}
-      <div className={`absolute top-0 left-0 right-0 p-4 z-10 ${darkMode ? 'bg-gray-800' : 'bg-white'
-        } border-b border-gray-700`}>
-        <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'
+      <div className={`absolute top-0 left-0 right-0 p-4 z-10 ${darkMode ? 'bg-surface-800' : 'bg-white'
+        } border-b ${darkMode ? 'border-surface-700' : 'border-surface-200'}`}>
+        <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-surface-900'
           }`}>
           {panels[currentIndex].title}
         </h2>

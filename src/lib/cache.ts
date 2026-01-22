@@ -21,7 +21,3 @@ export function hashInput(text: string, keywords: string[]): string {
     const input = text.slice(0, 100) + keywords.join(',');
     return btoa(encodeURIComponent(input));
 }
-
-export function clearCache(): void {
-    cache.clear();
-}

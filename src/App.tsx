@@ -209,36 +209,36 @@ function App() {
   };
 
   const RecordingControls = () => (
-    <div className="flex gap-2">
+    <div className="flex gap-3">
       <button
         onClick={startRecording}
         disabled={isRecording}
-        className={`p-3 rounded-lg transition-colors ${isRecording
-          ? 'bg-gray-300 cursor-not-allowed'
-          : 'bg-blue-600 hover:bg-blue-700'
+        className={`p-3 rounded-full transition-all ${isRecording
+          ? 'bg-surface-200 cursor-not-allowed opacity-50'
+          : 'bg-primary-500 hover:bg-primary-600 shadow-md hover:shadow-lg hover:scale-105'
           }`}
         aria-label="Start Recording"
       >
-        <Mic className={`w-5 h-5 ${isRecording ? 'text-gray-500' : 'text-white'}`} />
+        <Mic className={`w-5 h-5 ${isRecording ? 'text-surface-500' : 'text-white'}`} />
       </button>
 
       <button
         onClick={stopRecording}
         disabled={!isRecording}
-        className={`p-3 rounded-lg transition-colors ${!isRecording
-          ? 'bg-gray-300 cursor-not-allowed'
-          : 'bg-red-600 hover:bg-red-700'
+        className={`p-3 rounded-full transition-all ${!isRecording
+          ? 'bg-surface-200 cursor-not-allowed opacity-50'
+          : 'bg-coral hover:bg-red-500 shadow-md hover:shadow-lg'
           }`}
         aria-label="Stop Recording"
       >
-        <MicOff className={`w-5 h-5 ${!isRecording ? 'text-gray-500' : 'text-white'}`} />
+        <MicOff className="w-5 h-5 text-white" />
       </button>
 
       <button
         onClick={clearConversation}
-        className={`p-3 rounded-lg ${darkMode
-          ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        className={`p-3 rounded-full transition-all ${darkMode
+          ? 'bg-surface-800 text-surface-200 hover:bg-surface-700'
+          : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
           }`}
         aria-label="Clear Conversation"
       >
@@ -259,26 +259,28 @@ function App() {
     const selectedKeywordsForLast = lastTranscription?.selectedKeywords || [];
 
     return (
-      <div className="p-4 h-full overflow-y-auto">
-        <div className="flex flex-col gap-2">
+      <div className="p-6 h-full overflow-y-auto custom-scrollbar">
+        <ul className="flex flex-col gap-3">
           {uniqueKeywordsFromAll.map((keyword, index) => (
-            <button
-              key={index}
-              onClick={() => lastTranscription && toggleKeyword(keyword, lastTranscription.id)}
-              disabled={!lastTranscription}
-              className={`px-3 py-2 rounded-lg text-sm transition-colors text-left ${selectedKeywordsForLast.includes(keyword)
-                ? darkMode
-                  ? 'bg-green-900 text-green-200'
-                  : 'bg-green-100 text-green-700'
-                : darkMode
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                } ${!lastTranscription ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {keyword}
-            </button>
+            <li key={index}>
+              <button
+                onClick={() => lastTranscription && toggleKeyword(keyword, lastTranscription.id)}
+                disabled={!lastTranscription}
+                className={`text-left text-sm transition-all ${selectedKeywordsForLast.includes(keyword)
+                  ? 'text-primary-600 font-semibold pl-2 border-l-2 border-primary-500'
+                  : 'keyword-link'
+                  } ${!lastTranscription ? 'opacity-50 cursor-not-allowed no-underline' : ''}`}
+              >
+                {keyword}
+              </button>
+            </li>
           ))}
-        </div>
+          {uniqueKeywordsFromAll.length === 0 && (
+            <li className={`text-sm italic ${darkMode ? 'text-surface-500' : 'text-surface-400'}`}>
+              No keywords yet...
+            </li>
+          )}
+        </ul>
       </div>
     );
   };
@@ -288,13 +290,13 @@ function App() {
     const analysisToRender = selectedTranscription?.analysis;
 
     return (
-      <div className="p-6 h-full overflow-y-auto">
+      <div className="p-8 h-full overflow-y-auto custom-scrollbar">
         {isProcessing ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className={`w-8 h-8 animate-spin ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className={`w-8 h-8 animate-spin ${darkMode ? 'text-primary-400' : 'text-primary-500'}`} />
           </div>
         ) : error ? (
-          <div className={`${darkMode ? 'bg-red-900' : 'bg-red-50'} p-4 rounded-lg`}>
+          <div className={`${darkMode ? 'bg-red-900/20 border-red-900' : 'bg-red-50 border-red-100'} border p-4 rounded-lg`}>
             <p className={`${darkMode ? 'text-red-300' : 'text-red-600'}`}>Error: {error}</p>
           </div>
         ) : analysisToRender ? (
@@ -302,7 +304,7 @@ function App() {
             {renderAnalysis(analysisToRender)}
           </div>
         ) : (
-          <div className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'} text-center`}>
+          <div className={`p-4 ${darkMode ? 'text-surface-500' : 'text-surface-400'} text-center italic mt-12`}>
             {transcriptions.length === 0 ? "Start recording to see analysis." : "Select a transcription to view its analysis."}
           </div>
         )}
@@ -315,17 +317,17 @@ function App() {
     const sourcesToRender = selectedTranscription?.sources || [];
 
     return (
-      <div className="p-4 h-full overflow-y-auto">
+      <div className="p-6 h-full overflow-y-auto custom-scrollbar">
         {sourcesToRender.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="space-y-6">
+            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
               {sourcesToRender.map((url, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentUrl(url)}
-                  className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${currentUrl === url
-                    ? darkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-700'
-                    : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${currentUrl === url
+                    ? darkMode ? 'bg-primary-900/30 border-primary-500 text-primary-300' : 'bg-primary-50 border-primary-200 text-primary-700'
+                    : darkMode ? 'bg-surface-800 border-surface-700 text-surface-400 hover:border-surface-600' : 'bg-white border-surface-200 text-surface-600 hover:border-surface-300'
                     }`}
                 >
                   Source {index + 1}
@@ -333,33 +335,33 @@ function App() {
               ))}
             </div>
             {currentUrl && (
-              <div className="h-[calc(100vh-32rem)] bg-white rounded-lg overflow-hidden">
-                <div className={`${darkMode ? 'bg-gray-700' : 'bg-gray-50'
-                  } p-2 flex justify-between items-center`}>
-                  <div className={`truncate text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              <div className={`h-[calc(100vh-32rem)] rounded-lg overflow-hidden border ${darkMode ? 'border-surface-700' : 'border-surface-200'}`}>
+                <div className={`${darkMode ? 'bg-surface-800 border-surface-700' : 'bg-surface-50 border-surface-200'
+                  } p-3 flex justify-between items-center border-b`}>
+                  <div className={`truncate text-xs font-medium ${darkMode ? 'text-surface-400' : 'text-surface-500'}`}>
                     {currentUrl}
                   </div>
                   <a
                     href={currentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
-                      } flex items-center gap-1`}
+                    className={`${darkMode ? 'text-primary-400 hover:text-primary-300' : 'text-primary-600 hover:text-primary-800'
+                      } flex items-center gap-1 text-xs`}
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    Open <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
                 <iframe
                   src={currentUrl}
-                  className="w-full h-full border-0"
+                  className="w-full h-full border-0 bg-white"
                   title="Source Preview"
                 />
               </div>
             )}
           </div>
         ) : (
-          <div className={`p-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'} text-center`}>
-            {transcriptions.length === 0 ? "No sources yet. Start recording to see sources." : "No sources found for this transcription."}
+          <div className={`p-4 ${darkMode ? 'text-surface-500' : 'text-surface-400'} text-center italic mt-12`}>
+            {transcriptions.length === 0 ? "No sources yet." : "No sources found for this transcription."}
           </div>
         )}
       </div>
@@ -367,35 +369,36 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`min-h-screen ${darkMode ? 'bg-surface-950 text-surface-0' : 'bg-surface-0 text-surface-900'} transition-colors duration-300`}>
       <Toaster
         position="bottom-right"
         toastOptions={{
           duration: 4000,
           style: {
-            background: darkMode ? '#374151' : '#ffffff',
-            color: darkMode ? '#ffffff' : '#1f2937',
+            background: darkMode ? '#262626' : '#ffffff', // surface-800 / surface-0
+            color: darkMode ? '#ffffff' : '#171717', // surface-0 / surface-900
+            border: darkMode ? '1px solid #404040' : '1px solid #e5e5e5',
           },
         }}
       />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="container mx-auto px-4 md:px-8 py-8 md:py-12">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 md:mb-12">
           <div>
-            <h1 className={`text-2xl sm:text-3xl font-bold font-display ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className="text-4xl md:text-5xl font-bold font-display tracking-tight mb-2">
               Jamie, Look That Up
             </h1>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Take on the forces with your JRE Jamie
+            <p className={`text-lg font-light ${darkMode ? 'text-surface-400' : 'text-surface-500'}`}>
+              Take on the forces with JRE Jamie
             </p>
           </div>
 
           <div className="flex items-center gap-4">
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg ${darkMode
-                ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+              className={`p-3 rounded-full transition-colors ${darkMode
+                ? 'bg-surface-800 text-yellow-400 hover:bg-surface-700'
+                : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
                 }`}
               aria-label="Toggle dark mode"
             >
@@ -406,31 +409,31 @@ function App() {
           </div>
         </div>
 
-        <div className={`mb-8 ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}>
-          <div className="p-4 border-b border-gray-700">
-            <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className={`mb-12 ${darkMode ? 'card-dark' : 'card'} overflow-hidden`}>
+          <div className={`p-6 border-b ${darkMode ? 'border-surface-800' : 'border-surface-200'}`}>
+            <h2 className="section-title text-2xl">
               Transcription Timeline
             </h2>
           </div>
 
-          <div className={`px-4 py-3 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'} border-b border-gray-700`}>
-            <div className="flex items-center gap-2 mb-1">
-              <MessageSquareText className={`w-4 h-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-              <span className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Conversation Summary
+          <div className={`px-6 py-4 ${darkMode ? 'bg-surface-900/50' : 'bg-surface-50'} border-b ${darkMode ? 'border-surface-800' : 'border-surface-200'}`}>
+            <div className="flex items-center gap-3 mb-1">
+              <MessageSquareText className={`w-4 h-4 ${darkMode ? 'text-surface-400' : 'text-surface-500'}`} />
+              <span className={`text-xs font-medium uppercase tracking-wider ${darkMode ? 'text-surface-400' : 'text-surface-500'}`}>
+                Summary
               </span>
               {isSummarizing && (
-                <Loader2 className={`w-3 h-3 animate-spin ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <Loader2 className={`w-3 h-3 animate-spin ${darkMode ? 'text-primary-400' : 'text-primary-500'}`} />
               )}
             </div>
             {conversationSummary && (
-              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              <p className={`text-base leading-relaxed ${darkMode ? 'text-surface-300' : 'text-surface-600'}`}>
                 {conversationSummary}
               </p>
             )}
           </div>
 
-          <div className="p-4">
+          <div className="p-6">
             <TranscriptionTimeline
               transcriptions={transcriptions}
               selectedId={selectedTranscriptionId}
@@ -439,9 +442,9 @@ function App() {
             />
 
             {liveTranscription && (
-              <div className={`mt-4 p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'
-                } ${isRecording ? 'border-2 border-red-500 animate-pulse' : ''}`}>
-                <p className={`text-lg ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+              <div className={`mt-6 p-6 rounded-lg border ${darkMode ? 'bg-surface-900 border-primary-500/20' : 'bg-surface-50 border-primary-500/20'
+                } ${isRecording ? 'animate-pulse' : ''}`}>
+                <p className={`text-xl font-light leading-relaxed ${darkMode ? 'text-surface-200' : 'text-surface-800'}`}>
                   {liveTranscription}
                 </p>
               </div>
@@ -458,34 +461,31 @@ function App() {
           />
         </div>
 
-        <div className="hidden md:grid grid-cols-12 gap-6">
+        <div className="hidden md:grid grid-cols-12 gap-8">
           <div className="col-span-3">
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'
-              } rounded-lg shadow-lg overflow-hidden`}>
-              <div className="p-4 border-b border-gray-700">
-                <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Keyword Bank
+            <div className={`h-full ${darkMode ? 'card-dark' : 'card'} overflow-hidden flex flex-col`}>
+              <div className={`p-6 border-b ${darkMode ? 'border-surface-800' : 'border-surface-200'}`}>
+                <h2 className="section-title">
+                  Keywords
                 </h2>
               </div>
               <KeywordPanel />
             </div>
           </div>
 
-          <div className="col-span-9 space-y-6">
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'
-              } rounded-lg shadow-lg overflow-hidden`}>
-              <div className="p-4 border-b border-gray-700">
-                <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className="col-span-9 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className={`h-[600px] ${darkMode ? 'card-dark' : 'card'} overflow-hidden flex flex-col`}>
+              <div className={`p-6 border-b ${darkMode ? 'border-surface-800' : 'border-surface-200'}`}>
+                <h2 className="section-title">
                   Analysis
                 </h2>
               </div>
               <AnalysisPanel />
             </div>
 
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'
-              } rounded-lg shadow-lg overflow-hidden`}>
-              <div className="p-4 border-b border-gray-700">
-                <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`h-[600px] ${darkMode ? 'card-dark' : 'card'} overflow-hidden flex flex-col`}>
+              <div className={`p-6 border-b ${darkMode ? 'border-surface-800' : 'border-surface-200'}`}>
+                <h2 className="section-title">
                   Sources
                 </h2>
               </div>
