@@ -1,45 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Primary Meta Tags -->
-    <title>Jamie, Look That Up — Take on the forces with your JRE Jamie</title>
-    <meta name="title" content="Jamie, Look That Up — Take on the forces with your JRE Jamie" />
-    <meta name="description" content="Real-time AI-powered research assistant. Transcribe conversations, get instant analysis, keywords, and source citations." />
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://jamielookthatup.com/" />
-    <meta property="og:title" content="Jamie, Look That Up — Take on the forces with your JRE Jamie" />
-    <meta property="og:description" content="Real-time AI-powered research assistant. Transcribe conversations, get instant analysis, keywords, and source citations." />
-    <meta property="og:image" content="/og-image.png" />
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://jamielookthatup.com/" />
-    <meta property="twitter:title" content="Jamie, Look That Up — Take on the forces with your JRE Jamie" />
-    <meta property="twitter:description" content="Real-time AI-powered research assistant. Transcribe conversations, get instant analysis, keywords, and source citations." />
-    <meta property="twitter:image" content="/og-image.png" />
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://rsms.me" />
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f=satoshi@900,700,500,400&display=swap" />
-    
-    <style>
-      @supports (font-variation-settings: normal) {
-        :root { font-family: 'Inter var', sans-serif; }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary Meta Tags -->
+  <title>Jamie, Look That Up — Because Someone Has to Check</title>
+  <meta name="title" content="Jamie, Look That Up — Because Someone Has to Check" />
+  <meta name="description"
+    content="The ultimate conversation wingman. Say 'Jamie, Look That Up' to search on command, or let Jamie passively monitor and push relevant facts, sources, and citations in real-time. Finally, someone's doing the research." />
+  <meta name="keywords"
+    content="AI research assistant, real-time transcription, conversation analysis, fact-checking, JRE Jamie, voice search" />
+  <meta name="author" content="Jamie, Look That Up" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://jamielookthatup.com/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://jamielookthatup.com/" />
+  <meta property="og:site_name" content="Jamie, Look That Up" />
+  <meta property="og:title" content="Jamie, Look That Up — Because Someone Has to Check" />
+  <meta property="og:description"
+    content="The ultimate conversation wingman. Say 'Jamie, Look That Up' to search on command, or let Jamie passively monitor and push relevant facts, sources, and citations in real-time." />
+  <meta property="og:image" content="https://jamielookthatup.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://jamielookthatup.com/" />
+  <meta name="twitter:title" content="Jamie, Look That Up — Because Someone Has to Check" />
+  <meta name="twitter:description"
+    content="The ultimate conversation wingman. Say 'Jamie, Look That Up' to search on command, or let Jamie passively monitor and push relevant facts, sources, and citations in real-time." />
+  <meta name="twitter:image" content="https://jamielookthatup.com/og-image.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1a1a2e" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Jamie, Look That Up",
+      "description": "Real-time AI-powered research assistant. Transcribe conversations, get instant analysis, keywords, and source citations.",
+      "url": "https://jamielookthatup.com/",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
       }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    }
+    </script>
+
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BJ9CFK1QE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-6BJ9CFK1QE');
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://rsms.me" />
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f=satoshi@900,700,500,400&display=swap" />
+
+  <style>
+    @supports (font-variation-settings: normal) {
+      :root {
+        font-family: 'Inter var', sans-serif;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

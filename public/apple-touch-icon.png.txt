@@ -1,0 +1,7 @@
+Replace this file with your Apple Touch Icon (180x180px).
+
+This image appears when users:
+- Add the site to their iOS home screen
+- Bookmark on Safari
+
+Recommended format: PNG

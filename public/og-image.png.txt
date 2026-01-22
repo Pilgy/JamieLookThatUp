@@ -1,0 +1,11 @@
+Replace this file with your Open Graph image (1200x630px recommended).
+
+This image appears when the site is shared on:
+- Facebook
+- LinkedIn
+- Discord
+- Slack
+- iMessage link previews
+- And other platforms that support Open Graph
+
+Recommended format: PNG or JPEG
