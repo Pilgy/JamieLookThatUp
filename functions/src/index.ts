@@ -2,6 +2,9 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as logger from "firebase-functions/logger";
 
+// Re-export the searchSources function
+export { searchSources } from "./searchSources";
+
 // Initialize Gemini
 // Note: In production, we'll set the API Key via:
 // firebase functions:secrets:set GEMINI_API_KEY

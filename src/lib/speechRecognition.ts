@@ -234,7 +234,9 @@ export class BatchSpeechRecognition {
       if (similarity < 0.7 || force) {
         console.log('Processing batch:', combinedText);
         this.config.onBatchComplete(combinedText, new Date().toISOString());
-        this.lastProcessedText = combinedText;
+        // We don't want to persist the last processed text too aggressively across forced batches
+        // or we might suppress valid similar phrases in new batches
+        this.lastProcessedText = force ? '' : combinedText;
       }
 
       this.currentBatchText = '';
@@ -331,7 +333,7 @@ export class BatchSpeechRecognition {
     let finalTranscript = '';
     let interimTranscript = '';
 
-    for (let i = 0; i < event.results.length; i++) {
+    for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
       if (result.isFinal) {
         finalTranscript += result[0].transcript;

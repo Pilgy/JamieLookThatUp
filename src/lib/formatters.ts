@@ -2,15 +2,16 @@
 
 /**
  * Formats analysis text with clickable links and styled sections
+ * Note: SOURCES section removed - sources now come from Google Search API
  */
 export function formatAnalysisWithLinks(text: string): string {
   if (!text) return '';
 
-  // Regular expression to match URLs
+  // Regular expression to match URLs (kept for any inline URLs in analysis)
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  // Split the text into sections
-  const sections = text.split(/\n(?=KEYWORDS:|ANALYSIS:|INSIGHTS:|SOURCES:)/);
+  // Split the text into sections (SOURCES removed)
+  const sections = text.split(/\n(?=KEYWORDS:|ANALYSIS:|INSIGHTS:)/);
 
   // Process each section
   const processedSections = sections.map((section) => {
@@ -40,8 +41,6 @@ export function formatAnalysisWithLinks(text: string): string {
       return createSection('Analysis', processedSection.replace('ANALYSIS:', ''));
     } else if (section.startsWith('INSIGHTS:')) {
       return createSection('Insights', processedSection.replace('INSIGHTS:', ''));
-    } else if (section.startsWith('SOURCES:')) {
-      return createSection('Sources', processedSection.replace('SOURCES:', ''));
     }
 
     // Default case: just return processed text
@@ -49,20 +48,6 @@ export function formatAnalysisWithLinks(text: string): string {
   });
 
   return processedSections.join('\n');
-}
-
-/**
- * Extracts URLs from text content
- */
-export function extractUrls(text: string): string[] {
-  if (!text) return [];
-
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const matches = text.match(urlRegex) || [];
-
-  return matches
-    .map((url) => url.replace(/[.,;]$/, '')) // Remove trailing punctuation
-    .filter((url, index, self) => self.indexOf(url) === index); // Remove duplicates
 }
 
 /**

@@ -1,9 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.analyzeWithGemini = void 0;
+exports.analyzeWithGemini = exports.searchSources = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const generative_ai_1 = require("@google/generative-ai");
 const logger = require("firebase-functions/logger");
+// Re-export the searchSources function
+var searchSources_1 = require("./searchSources");
+Object.defineProperty(exports, "searchSources", { enumerable: true, get: function () { return searchSources_1.searchSources; } });
 // Initialize Gemini
 // Note: In production, we'll set the API Key via:
 // firebase functions:secrets:set GEMINI_API_KEY

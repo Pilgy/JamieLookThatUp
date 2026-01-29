@@ -10,6 +10,8 @@ interface TranscriptionData {
 interface GeminiResponse {
   analysis: string;
   summary?: string;
+  diveDeeper?: string;
+  searchQuery?: string;
 }
 
 // FactCheck interface - reserved for future fact-checking implementation
@@ -29,12 +31,10 @@ const JAMIE_SYSTEM_INSTRUCTION = `You are Jamie, an expert conversation facilita
 CORE PRINCIPLES:
 - Your goal is to deepen dialogue, not merely summarize
 - Connect ideas across time and identify unspoken tensions
-- Provide only authoritative, peer-reviewed, or institutional sources (.gov, .edu, established journals)
 - Use a warm but intellectually rigorous tone
 
 OUTPUT REQUIREMENTS:
-- Always format responses with clear sections (KEYWORDS, ANALYSIS, INSIGHTS, SOURCES)
-- URLs must be complete, valid, and directly relevant
+- Always format responses with clear sections (KEYWORDS, ANALYSIS, INSIGHTS, SEARCH_QUERY)
 - End conversation summaries with a Socratic question that advances understanding
 `;
 
@@ -87,22 +87,21 @@ async function handleDirectRequest(
 
 Provide a response that:
 - Connects to the conversation history
-- Surfaces relevant academic or institutional sources
 - Advances understanding with follow-up questions or insights
 
-Format your response naturally, but include 2-3 authoritative URLs as citations.`;
+Format your response naturally.`;
 
   return await callGeminiAPI(prompt, 1024, JAMIE_SYSTEM_INSTRUCTION);
 }
 
 /**
- * Generate a conversation summary
+ * Generate a conversation summary with separate summary and dive deeper question
  */
 async function generateConversationSummary(
   transcriptions: TranscriptionData[],
   selectedKeywords: string[] = []
-): Promise<string> {
-  if (transcriptions.length === 0) return '';
+): Promise<{ summary: string; diveDeeper: string }> {
+  if (transcriptions.length === 0) return { summary: '', diveDeeper: '' };
 
   const sorted = transcriptions
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -115,19 +114,29 @@ async function generateConversationSummary(
 GOAL: Deepen the dialogue by connecting ideas and surfacing what's unspoken.
 
 INSTRUCTIONS:
-1. Identify distinct viewpoints or evolving themes in the transcript
-2. Note any tensions, agreements, or complementary ideas the speakers haven't explicitly connected
-3. Output a 2-3 sentence "bridge" that connects the current topic to previous topics
-4. End with a single Socratic question designed to move the group toward higher understanding
+Provide your response in EXACTLY this format with these two sections:
+
+SUMMARY: [1-2 sentences summarizing the main topic and themes of the conversation. Do NOT include a question here.]
+
+DIVE DEEPER: [A single succinct Socratic question designed to move the group toward higher understanding.]
 
 ${selectedKeywords.length > 0
-      ? `Focus your bridge and question on the selected keywords: ${selectedKeywords.join(', ')}`
+      ? `Focus on the selected keywords: ${selectedKeywords.join(', ')}`
       : 'Look for thematic throughlines across the entire conversation'}
 
 TRANSCRIPT:
 ${sorted.map(t => `- ${t.text}`).join('\n')}`;
 
-  return await callGeminiAPI(prompt, 512, JAMIE_SYSTEM_INSTRUCTION);
+  const response = await callGeminiAPI(prompt, 512, JAMIE_SYSTEM_INSTRUCTION);
+
+  // Parse the structured response
+  const summaryMatch = response.match(/SUMMARY:\s*(.+?)(?=DIVE DEEPER:|$)/is);
+  const diveMatch = response.match(/DIVE DEEPER:\s*(.+?)$/is);
+
+  return {
+    summary: summaryMatch ? summaryMatch[1].trim() : response,
+    diveDeeper: diveMatch ? diveMatch[1].trim() : ''
+  };
 }
 
 /**
@@ -156,22 +165,22 @@ Respond with exactly 4 sections:
 KEYWORDS: Restate the selected keywords with brief definitional context
 ANALYSIS: 2-3 sentences explaining how these specific concepts interconnect
 INSIGHTS: 2 key insights about the relationship between ${selectedKeywords.join(' and ')}
-SOURCES: 2-3 authoritative URLs specifically about the intersection of these topics (prioritize .gov, .edu, academic journals)
+SEARCH_QUERY: A single, effective Google search query (5-7 words) to find authoritative sources on these combined topics.
 
 Text: "${text.trim()}"`;
 
     return await callGeminiAPI(prompt, 1024, JAMIE_SYSTEM_INSTRUCTION);
   }
 
-  // THEMATIC EXPLORATION  (no keywords selected)
-  const prompt = `${history}Analyze this transcription for thematic connect ions and unspoken tensions.
+  // THEMATIC EXPLORATION (no keywords selected)
+  const prompt = `${history}Analyze this transcription for thematic connections and unspoken tensions.
 
 Respond with exactly 4 sections:
 
 KEYWORDS: 5-7 relevant terms that could serve as research nodes
 ANALYSIS: 2-3 sentence observation connecting main themes
 INSIGHTS: 2 key insights with context (what's being explored? what's unstated?)
-SOURCES: 2-3 authoritative URLs for deeper exploration (prioritize .gov, .edu, peer-reviewed sources)
+SEARCH_QUERY: A single, effective Google search query (5-7 words) to find authoritative sources on the main theme.
 
 Text: "${text.trim()}"`;
 
@@ -243,12 +252,21 @@ export async function analyzeWithGemini(
       ? await handleDirectRequest(text, selectedKeywords, previousTranscriptions)
       : await handleAnalysis(text, selectedKeywords, previousTranscriptions);
 
-    const summary = await generateConversationSummary(
+    const summaryResult = await generateConversationSummary(
       [...previousTranscriptions, { text, timestamp: new Date().toISOString() }],
       selectedKeywords
     );
 
-    const result = { analysis, summary };
+    // Extract search query if present
+    const searchQueryMatch = analysis.match(/SEARCH_QUERY:\s*(.+?)(?=$)/s);
+    const searchQuery = searchQueryMatch ? searchQueryMatch[1].trim() : '';
+
+    const result = {
+      analysis,
+      summary: summaryResult.summary,
+      diveDeeper: summaryResult.diveDeeper,
+      searchQuery
+    };
 
     // Cache the result
     const cacheKey = hashInput(text, selectedKeywords);
