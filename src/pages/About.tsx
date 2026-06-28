@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Moon, Sun, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { DevPlaque } from '../components/DevPlaque';
 
 export default function About() {
     const [darkMode, setDarkMode] = useState(() => {
@@ -66,7 +67,7 @@ export default function About() {
                                 { title: 'Keyword Extraction', desc: 'Key concepts are automatically identified for deeper research' },
                                 { title: 'AI Analysis', desc: 'Get instant insights, connections, and thematic analysis' },
                                 { title: 'Source Citations', desc: 'Explore authoritative references from .edu, .gov, and academic sources' },
-                            ].map((item, index) => (
+                             ].map((item, index) => (
                                 <li key={index} className="flex items-start gap-3">
                                     <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${darkMode ? 'bg-primary-900/50 text-primary-400' : 'bg-primary-100 text-primary-600'
                                         }`}>
@@ -93,7 +94,7 @@ export default function About() {
                         <div className="space-y-4">
                             <div>
                                 <h3 className={`font-semibold mb-2 ${darkMode ? 'text-surface-200' : 'text-surface-700'}`}>
-                                    AI & Backend
+                                    Speech Processing & Backend
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
                                     {['Google Gemini', 'Firebase', 'Cloud Functions'].map((tech) => (
@@ -136,9 +137,10 @@ export default function About() {
 
                 {/* Footer */}
                 <div className={`text-center pt-8 border-t ${darkMode ? 'border-surface-800' : 'border-surface-200'}`}>
-                    <p className={`text-sm ${darkMode ? 'text-surface-500' : 'text-surface-400'}`}>
+                    <p className={`text-sm ${darkMode ? 'text-surface-500' : 'text-surface-400'} mb-4`}>
                         © {new Date().getFullYear()} Jamie, Look That Up. All rights reserved.
                     </p>
+                    <DevPlaque />
                 </div>
             </div>
         </div>

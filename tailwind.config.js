@@ -26,6 +26,8 @@ export default {
         },
         'coral': '#FF6B6B',
         'teal': '#4ECDC4',
+        'brand-navy': '#0f172a',
+        'brand-blue': '#3b82f6',
         'surface': {
           0: '#ffffff',
           50: '#fafafa',

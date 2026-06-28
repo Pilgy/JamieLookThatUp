@@ -7,23 +7,55 @@
 export function formatAnalysisWithLinks(text: string): string {
   if (!text) return '';
 
-  // Regular expression to match URLs (kept for any inline URLs in analysis)
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-
+  // 1. Parse Markdown links: [Text](URL)
+  const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  
   // Split the text into sections (SOURCES removed)
   const sections = text.split(/\n(?=KEYWORDS:|ANALYSIS:|INSIGHTS:)/);
 
   // Process each section
   const processedSections = sections.map((section) => {
-    // Replace URLs with anchor tags
-    const processedSection = section.replace(urlRegex, (url) => {
-      // Clean up the URL if it ends with punctuation
-      const cleanUrl = url.replace(/[.,;]$/, '');
+    // First, convert Markdown links to HTML links
+    let processedSection = section.replace(markdownLinkRegex, (_, text, url) => {
+      return `<a href="${url}" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="text-primary-500 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline underline-offset-2 transition-colors"
+      >${text}</a>`;
+    });
+
+    // 2. Parse remaining raw URLs that are not already inside an HTML tag
+    const htmlOrUrlRegex = /(<a\s+[^>]*>.*?<\/a>|<[^>]+>)|(https?:\/\/[^\s<]+)/g;
+    processedSection = processedSection.replace(htmlOrUrlRegex, (match, htmlTag, url) => {
+      if (htmlTag) {
+        // Leave existing HTML tags (like the <a> we just created) unchanged
+        return match;
+      }
+
+      // It's a raw URL. Let's clean up trailing punctuation (.,;))
+      let cleanUrl = url;
+      let trailing = '';
+      
+      const trailingMatch = cleanUrl.match(/([.,;)]+)$/);
+      if (trailingMatch) {
+        const trailingChars = trailingMatch[1];
+        const openParentheses = (cleanUrl.match(/\(/g) || []).length;
+        const closeParentheses = (cleanUrl.match(/\)/g) || []).length;
+        
+        // If the URL ends with ')' and there is a matching '(' in the URL, keep it (e.g. Wikipedia URLs)
+        if (trailingChars === ')' && openParentheses >= closeParentheses) {
+          // Keep it
+        } else {
+          cleanUrl = cleanUrl.slice(0, -trailingChars.length);
+          trailing = trailingChars;
+        }
+      }
+
       return `<a href="${cleanUrl}" 
         target="_blank" 
         rel="noopener noreferrer"
         class="text-primary-500 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline underline-offset-2 transition-colors"
-      >${cleanUrl}</a>`;
+      >${cleanUrl}</a>${trailing}`;
     });
 
     // Helper function to create section HTML

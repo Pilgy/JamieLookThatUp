@@ -1,21 +1,14 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import * as logger from "firebase-functions/logger";
 
 // Re-export the searchSources function
 export { searchSources } from "./searchSources";
 
-// Initialize Gemini
-// Note: In production, we'll set the API Key via:
-// firebase functions:secrets:set GEMINI_API_KEY
-// and access it via process.env.GEMINI_API_KEY or define it in code if using functions:config
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "");
-
 export const analyzeWithGemini = onCall({ cors: true, secrets: ["GEMINI_API_KEY"] }, async (request) => {
-    if (!GEMINI_API_KEY) {
-        logger.error("GEMINI_API_KEY is not set");
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        logger.error("GEMINI_API_KEY is not set in process.env");
         throw new HttpsError("internal", "API key not configured");
     }
 
@@ -26,22 +19,19 @@ export const analyzeWithGemini = onCall({ cors: true, secrets: ["GEMINI_API_KEY"
     }
 
     try {
-        // Create model configuration
-        const modelConfig: any = { model: "gemini-2.0-flash-lite" };
+        const ai = new GoogleGenAI({ apiKey });
+        const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-        // Add system instruction if provided
-        if (systemInstruction && typeof systemInstruction === "string") {
-            modelConfig.systemInstruction = systemInstruction;
-        }
+        logger.info(`Calling Gemini model: ${modelName}`);
+        const response = await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+            config: {
+                systemInstruction: systemInstruction || undefined
+            }
+        });
 
-        // Initialize model with configuration
-        const model = genAI.getGenerativeModel(modelConfig);
-
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-
-        return { text };
+        return { text: response.text || "" };
     } catch (error) {
         logger.error("Gemini API Error", error);
         throw new HttpsError("internal", "Failed to process request with Gemini", error);

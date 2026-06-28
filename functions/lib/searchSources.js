@@ -2,58 +2,93 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchSources = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const genai_1 = require("@google/genai");
 const logger = require("firebase-functions/logger");
 /**
- * Searches Google Custom Search API for authoritative sources
- * based on provided keywords
+ * Searches the web for authoritative sources using Gemini Google Search Grounding
+ * and returns structured JSON results.
  */
 exports.searchSources = (0, https_1.onCall)({
     cors: true,
-    secrets: ["GOOGLE_SEARCH_API_KEY", "GOOGLE_SEARCH_ENGINE_ID"]
+    secrets: ["GEMINI_API_KEY"]
 }, async (request) => {
-    var _a, _b;
     const { keywords, query } = request.data;
-    const GOOGLE_SEARCH_API_KEY = (_a = process.env.GOOGLE_SEARCH_API_KEY) === null || _a === void 0 ? void 0 : _a.trim();
-    const SEARCH_ENGINE_ID = (_b = process.env.GOOGLE_SEARCH_ENGINE_ID) === null || _b === void 0 ? void 0 : _b.trim();
-    if (!GOOGLE_SEARCH_API_KEY || !SEARCH_ENGINE_ID) {
-        logger.error("Google Search API credentials not configured");
-        throw new https_1.HttpsError("internal", "Search API not configured");
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    if (!GEMINI_API_KEY) {
+        logger.error("GEMINI_API_KEY not configured");
+        throw new https_1.HttpsError("internal", "API key not configured");
     }
     if (!keywords && !query) {
         throw new https_1.HttpsError("invalid-argument", "Keywords or query required");
     }
-    // Build search query from keywords (limit to top 5 for relevance)
     const searchQuery = query || (keywords ? keywords.slice(0, 5).join(" ") : "");
-    // Note: Site filtering is handled by the Programmable Search Engine configuration
-    // No additional filters applied here to allow broader results
     try {
-        const url = new URL("https://www.googleapis.com/customsearch/v1");
-        url.searchParams.set("key", GOOGLE_SEARCH_API_KEY);
-        url.searchParams.set("cx", SEARCH_ENGINE_ID);
-        url.searchParams.set("q", searchQuery);
-        url.searchParams.set("num", "5"); // Return top 5 results
-        logger.info(`Searching Google for: ${searchQuery}`);
-        const response = await fetch(url.toString());
-        if (!response.ok) {
-            const errorText = await response.text();
-            logger.error(`Google API error: ${response.status} - ${errorText}`);
-            throw new Error(`Google API returned ${response.status}`);
+        logger.info(`Searching the web via Gemini Grounding for: ${searchQuery}`);
+        const ai = new genai_1.GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        const prompt = `Perform a Google Search to find high-quality, reputable web sources and articles about the following topics: ${searchQuery}.`;
+        const response = await ai.models.generateContent({
+            model: modelName,
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }]
+            }
+        });
+        const candidate = response.candidates?.[0];
+        const groundingMetadata = candidate?.groundingMetadata;
+        const sources = [];
+        // 1. Extract from groundingChunks (contains the web source URIs and titles)
+        const chunks = groundingMetadata?.groundingChunks || [];
+        for (const chunk of chunks) {
+            if (chunk.web?.uri) {
+                sources.push({
+                    title: chunk.web.title || "Web Source",
+                    link: chunk.web.uri,
+                    snippet: chunk.web.title ? `Cited from: ${chunk.web.title}` : `Source: ${chunk.web.uri}`
+                });
+            }
         }
-        const data = await response.json();
-        const results = (data.items || []).map((item) => ({
-            title: item.title,
-            link: item.link,
-            snippet: item.snippet,
-            displayLink: item.displayLink
-        }));
-        logger.info(`Found ${results.length} sources for query: ${searchQuery}`);
+        // 2. Fallback to groundingSources if chunks are empty
+        if (sources.length === 0) {
+            const gSources = groundingMetadata?.groundingSources || [];
+            for (const src of gSources) {
+                const web = src.web || src;
+                if (web.uri) {
+                    sources.push({
+                        title: web.title || "Web Source",
+                        link: web.uri,
+                        snippet: web.title ? `Cited from: ${web.title}` : `Source: ${web.uri}`
+                    });
+                }
+            }
+        }
+        // Deduplicate sources by URL
+        const uniqueSources = Array.from(new Map(sources.map(s => [s.link, s])).values());
+        const results = uniqueSources.map((item) => {
+            let displayLink = "";
+            try {
+                displayLink = item.link ? new URL(item.link).hostname : "";
+            }
+            catch (e) {
+                displayLink = item.link || "";
+            }
+            return {
+                title: item.title || "Web Source",
+                link: item.link || "",
+                snippet: item.snippet || "",
+                displayLink: displayLink
+            };
+        });
+        logger.info(`Successfully retrieved ${results.length} grounded sources.`);
         return { results };
     }
     catch (error) {
-        logger.error("Google Search API Error", error);
-        // Return empty results rather than failing completely
-        // This allows the app to continue working even if search fails
-        return { results: [] };
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        logger.error("Gemini Search Grounding Error", error);
+        return {
+            results: [],
+            error: `Google Search Grounding failed: ${errorMessage}`
+        };
     }
 });
 //# sourceMappingURL=searchSources.js.map
