@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
 import { getCached, setCache, hashInput } from './cache';
 
-interface TranscriptionData {
+export interface TranscriptionData {
   text: string;
   timestamp: string;
 }
@@ -97,7 +97,7 @@ Format your response naturally.`;
 /**
  * Generate a conversation summary with separate summary and dive deeper question
  */
-async function generateConversationSummary(
+export async function generateConversationSummary(
   transcriptions: TranscriptionData[],
   selectedKeywords: string[] = []
 ): Promise<{ summary: string; diveDeeper: string }> {
@@ -224,7 +224,8 @@ export async function analyzeWithGemini(
   text: string,
   selectedKeywords: string[] = [],
   keywordsOnly: boolean = false,
-  allTranscriptions: TranscriptionData[] = []
+  allTranscriptions: TranscriptionData[] = [],
+  skipSummary: boolean = false
 ): Promise<GeminiResponse> {
   if (!text.trim()) {
     throw new Error('Empty text provided for analysis');
@@ -252,10 +253,12 @@ export async function analyzeWithGemini(
       ? await handleDirectRequest(text, selectedKeywords, previousTranscriptions)
       : await handleAnalysis(text, selectedKeywords, previousTranscriptions);
 
-    const summaryResult = await generateConversationSummary(
-      [...previousTranscriptions, { text, timestamp: new Date().toISOString() }],
-      selectedKeywords
-    );
+    const summaryResult = skipSummary
+      ? { summary: '', diveDeeper: '' }
+      : await generateConversationSummary(
+          [...previousTranscriptions, { text, timestamp: new Date().toISOString() }],
+          selectedKeywords
+        );
 
     // Extract search query if present
     const searchQueryMatch = analysis.match(/SEARCH_QUERY:\s*(.+?)(?=$)/s);

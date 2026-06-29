@@ -2,25 +2,18 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Moon, Sun, Mic, MicOff, Loader2, X, ExternalLink, MessageSquareText, ChevronDown, ChevronUp, Lightbulb, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Toaster, toast } from 'react-hot-toast';
-import { updateSession, verifySession } from './lib/firebase';
-import { analyzeWithGemini } from './lib/gemini';
-import { formatAnalysisWithLinks, extractKeywords } from './lib/formatters';
-import { searchSources, SearchResult } from './lib/searchSources';
+
+import { useTranscriptionStore } from './store/useTranscriptionStore';
+import { useKeywordStore } from './store/useKeywordStore';
+import { useAnalysisStore } from './store/useAnalysisStore';
+import { useSummaryStore } from './store/useSummaryStore';
+import { useSessionStore } from './store/useSessionStore';
+import { formatAnalysisWithLinks } from './lib/formatters';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { TranscriptionTimeline } from './components/TranscriptionTimeline';
 import { MobileLayout } from './components/MobileLayout';
 
-interface Transcription {
-  id: string;
-  text: string;
-  timestamp: string;
-  isAnalyzed: boolean;
-  keywords?: string[];
-  selectedKeywords?: string[];
-  analysis?: string;
-  sources?: SearchResult[];
-  summary?: string;
-}
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -28,21 +21,21 @@ function App() {
     return savedMode ? JSON.parse(savedMode) : false;
   });
 
-  const [transcriptions, setTranscriptions] = useState<Transcription[]>([]);
-  const [liveTranscription, setLiveTranscription] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState('');
-  const [allKeywords, setAllKeywords] = useState<string[]>([]);
-  const [conversationSummary, setConversationSummary] = useState('');
-  const [selectedTranscriptionId, setSelectedTranscriptionId] = useState<string | null>(null);
-  const [isInSession, setIsInSession] = useState(false);
-  const [sessionCode, setSessionCode] = useState('');
-  const [showSessionInput, setShowSessionInput] = useState(false);
-  const [sessionCodeInput, setSessionCodeInput] = useState('');
-  const [isSummarizing, setIsSummarizing] = useState(false);
+  const { transcriptions, liveTranscription, selectedTranscriptionId, setSelectedTranscriptionId } = useTranscriptionStore();
+  const { isAnalyzing: isProcessing, error: analysisError } = useAnalysisStore();
+  const { conversationSummary, diveDeeper, isSummarizing, hasUnreadSummary, setHasUnreadSummary } = useSummaryStore();
+  const { 
+    isInSession, 
+    sessionCode, 
+    sessionCodeInput, 
+    showSessionInput, 
+    setSessionCodeInput, 
+    setShowSessionInput, 
+    connectSession, 
+    disconnectSession 
+  } = useSessionStore();
+
   const [isSummaryCollapsed, setIsSummaryCollapsed] = useState(true);
-  const [diveDeeper, setDiveDeeper] = useState('');
-  const [hasUnreadSummary, setHasUnreadSummary] = useState(false);
 
   useEffect(() => {
     if (transcriptions.length > 0) {
@@ -51,23 +44,15 @@ function App() {
     }
   }, [transcriptions]);
 
+
   const speechRecognitionConfig = useMemo(() => ({
     onBatchComplete: async (text: string) => {
-      const transcription: Transcription = {
-        id: Date.now().toString(),
-        text,
-        timestamp: new Date().toISOString(),
-        isAnalyzed: false,
-        keywords: [],
-        selectedKeywords: [],
-        analysis: '',
-        sources: [],
-        summary: ''
-      };
-      setTranscriptions(prev => [transcription, ...prev]);
-      await processTranscription(transcription);
+      const id = useTranscriptionStore.getState().addTranscription(text);
+      useAnalysisStore.getState().analyzeSegment(id).catch((err) => {
+        toast.error(`Analysis failed: ${err.message || err}`);
+      });
     },
-    onLiveTranscription: setLiveTranscription,
+    onLiveTranscription: (text: string) => useTranscriptionStore.getState().setLiveTranscription(text),
     onError: (error: string) => {
       toast.error(error);
     }
@@ -84,159 +69,35 @@ function App() {
     }
   }, [darkMode]);
 
-  const processTranscription = useCallback(async (transcriptionToProcess: Transcription) => {
-    try {
-      setIsProcessing(true);
-      setError('');
+  // Asynchronous AI services have been moved to Zustand stores (useAnalysisStore, useSummaryStore, useSourceStore)
 
-      const { analysis: keywordsResponse } = await analyzeWithGemini(transcriptionToProcess.text, [], true);
-      if (!keywordsResponse) {
-        throw new Error('Failed to extract keywords');
-      }
-      const newKeywords = extractKeywords(keywordsResponse);
-      if (!newKeywords || !Array.isArray(newKeywords)) {
-        throw new Error('Invalid keywords format received');
-      }
-
-      setIsSummarizing(true);
-      const keywordsForAnalysis = transcriptionToProcess.selectedKeywords || [];
-      const { analysis, summary, diveDeeper: newDiveDeeper, searchQuery } = await analyzeWithGemini(
-        transcriptionToProcess.text,
-        keywordsForAnalysis,
-        false,
-        transcriptions.map(t => ({ text: t.text, timestamp: t.timestamp }))
-      );
-
-      if (!analysis) {
-        throw new Error('Failed to generate analysis');
-      }
-      if (!summary) {
-        console.warn("Conversation summary was not generated by Gemini API.");
-      }
-
-      let searchTerms: string[] = [];
-
-      if (keywordsForAnalysis.length > 0) {
-        searchTerms = keywordsForAnalysis;
-      } else if (searchQuery) {
-        searchTerms = [searchQuery];
-      } else {
-        searchTerms = newKeywords;
-      }
-
-      const newSources = await searchSources(searchTerms);
-
-      // Build updated states locally to avoid stale closure references
-      const updatedTranscriptions = transcriptions.map(t =>
-        t.id === transcriptionToProcess.id ? {
-          ...t,
-          isAnalyzed: true,
-          keywords: newKeywords,
-          analysis: analysis,
-          sources: newSources,
-          summary: summary
-        } : t
-      );
-
-      const updatedKeywords = [...new Set([...allKeywords, ...newKeywords])].sort();
-
-      // Apply state updates
-      setAllKeywords(updatedKeywords);
-      setTranscriptions(updatedTranscriptions);
-
-      if (summary) {
-        setConversationSummary(summary);
-        setHasUnreadSummary(true);
-      }
-      if (newDiveDeeper) {
-        setDiveDeeper(newDiveDeeper);
-        setHasUnreadSummary(true);
-      }
-
-      if (isInSession && sessionCode) {
-        await updateSession(sessionCode, {
-          transcriptions: updatedTranscriptions,
-          analysis,
-          urlList: newSources.map((s: SearchResult) => s.link),
-          keywords: updatedKeywords,
-          summary
-        });
-      }
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      console.error('Error processing transcription:', errorMessage);
-      toast.error(`Failed to process transcription: ${errorMessage}`);
-      setError(errorMessage);
-    } finally {
-      setIsProcessing(false);
-      setIsSummarizing(false);
-    }
-  }, [transcriptions, isInSession, sessionCode, allKeywords]);
+  // Ref assignment removed
 
   const clearConversation = useCallback(() => {
-    setTranscriptions([]);
-    setAllKeywords([]);
-    setConversationSummary('');
-    setSelectedTranscriptionId(null);
-    setHasUnreadSummary(false);
-    setDiveDeeper('');
+    useTranscriptionStore.getState().clearTranscriptions();
+    useKeywordStore.getState().clearKeywords();
+    useSummaryStore.getState().clearSummary();
     toast.success('Conversation cleared');
   }, []);
 
   const toggleKeyword = useCallback((keyword: string, transcriptionId: string) => {
-    setTranscriptions(prev =>
-      prev.map(t => {
-        if (t.id === transcriptionId) {
-          const isSelected = t.selectedKeywords?.includes(keyword);
-          const updatedKeywords = isSelected
-            ? t.selectedKeywords?.filter(k => k !== keyword) || []
-            : [...(t.selectedKeywords || []), keyword];
+    useKeywordStore.getState().toggleKeyword(transcriptionId, keyword);
 
-          if (t.isAnalyzed) {
-            processTranscription({ ...t, selectedKeywords: updatedKeywords });
-          }
-
-          return { ...t, selectedKeywords: updatedKeywords };
-        }
-        return t;
-      })
-    );
-  }, [processTranscription]);
+    const transcription = useTranscriptionStore.getState().transcriptions.find(t => t.id === transcriptionId);
+    if (transcription && transcription.isAnalyzed) {
+      useAnalysisStore.getState().analyzeSegment(transcriptionId).catch((err) => {
+        toast.error(`Re-analysis failed: ${err.message || err}`);
+      });
+    }
+  }, []);
 
   const handleTranscriptionSelect = useCallback((id: string) => {
     setSelectedTranscriptionId(id);
   }, []);
 
-  const handleConnectSession = async (e: React.FormEvent) => {
+  const handleConnectSession = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedCode = sessionCodeInput.trim();
-    if (!trimmedCode) return;
-
-    try {
-      setIsProcessing(true);
-      const exists = await verifySession(trimmedCode);
-      if (exists) {
-        setSessionCode(trimmedCode);
-        setIsInSession(true);
-        setShowSessionInput(false);
-        toast.success(`Connected to session: ${trimmedCode}`);
-      } else {
-        toast.error('Session not found. Please verify the code.');
-      }
-    } catch (err) {
-      console.error('Session connection error:', err);
-      toast.error('Failed to connect to session.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleDisconnectSession = () => {
-    setIsInSession(false);
-    setSessionCode('');
-    setSessionCodeInput('');
-    toast.success('Disconnected from session');
+    connectSession(sessionCodeInput);
   };
 
   const renderAnalysis = (analysisText: string | undefined) => {
@@ -337,9 +198,9 @@ function App() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className={`w-8 h-8 animate-spin ${darkMode ? 'text-primary-400' : 'text-primary-500'}`} />
           </div>
-        ) : error ? (
+        ) : analysisError ? (
           <div className={`${darkMode ? 'bg-red-900/20 border-red-900' : 'bg-red-50 border-red-100'} border p-4 rounded-lg`}>
-            <p className={`${darkMode ? 'text-red-300' : 'text-red-600'}`}>Error: {error}</p>
+            <p className={`${darkMode ? 'text-red-300' : 'text-red-600'}`}>Error: {analysisError}</p>
           </div>
         ) : analysisToRender ? (
           <div className={`prose ${darkMode ? 'prose-invert' : ''} max-w-none`}>
@@ -443,7 +304,7 @@ function App() {
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>Session: {sessionCode}</span>
                   <button
-                    onClick={handleDisconnectSession}
+                    onClick={disconnectSession}
                     className="ml-2 hover:text-emerald-800 dark:hover:text-emerald-200 font-bold transition-colors"
                     title="Disconnect"
                   >
